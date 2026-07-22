@@ -1,0 +1,39 @@
+# --- Go ---
+/bin/
+/cmd/**/server
+*.exe
+*.test
+*.out
+vendor/
+
+# --- Self-signed certs (Day 1) ---
+*.pem
+*.key
+*.crt
+*.cer
+
+# --- Secrets / env ---
+.env
+.env.*
+*.local
+
+# --- Xcode / Tuist ---
+*.xcodeproj
+*.xcworkspace
+Derived*/
+.build/
+Tuist/.build/
+.tuist-bin/
+*.tuist-version-cache
+Package.resolved
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+.swiftpm/
+
+# --- macOS ---
+.DS_Store
+
+# --- Private notes ---
+/TODO_projekt_treningowy.md
