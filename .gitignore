@@ -1,6 +1,6 @@
 # --- Go ---
 /bin/
-/cmd/**/server
+backend/cmd/**/server
 *.exe
 *.test
 *.out

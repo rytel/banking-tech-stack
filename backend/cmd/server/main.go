@@ -3,15 +3,25 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"banking-tech-stack/backend/internal/auth"
+	"banking-tech-stack/backend/internal/handlers"
+	"banking-tech-stack/backend/internal/topics"
+)
+
+const (
+	addr     = ":8443"
+	certFile = "certs/server.crt"
+	keyFile  = "certs/server.key"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	authSvc, err := auth.NewService()
+	if err != nil {
+		log.Fatalf("could not create auth service: %v", err)
+	}
+	router := handlers.NewRouter(authSvc, topics.NewService())
 
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	log.Println("server listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Printf("server listening on https://localhost%s", addr)
+	log.Fatal(http.ListenAndServeTLS(addr, certFile, keyFile, router))
 }
