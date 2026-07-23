@@ -2,6 +2,7 @@ import ProjectDescription
 
 let deploymentTargets: DeploymentTargets = .iOS("26.0")
 let bundleIdRoot = "dev.rflrytel.bankingtechstack"
+let developmentTeam = "2WF737FU65"
 
 public extension TargetDependency {
     /// A dependency on a module under `Projects/Core/<module>`, e.g. `.core("Models")`.
@@ -46,6 +47,10 @@ public extension Project {
             dependencies: [.target(name: name)]
         )
 
-        return Project(name: name, targets: [mainTarget, testTarget])
+        return Project(
+            name: name,
+            settings: .settings(base: ["DEVELOPMENT_TEAM": .string(developmentTeam)]),
+            targets: [mainTarget, testTarget]
+        )
     }
 }
