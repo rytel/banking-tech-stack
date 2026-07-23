@@ -6,5 +6,11 @@ let workspace = Workspace(
         "Projects/App",
         "Projects/Features/**",
         "Projects/Core/**",
+    ],
+    additionalFiles: [
+        "Workspace.swift",
+        "Tuist.swift",
+        "Tuist/ProjectDescriptionHelpers/Project+Module.swift",
+        "Tuist/Package.swift",
     ]
 )
