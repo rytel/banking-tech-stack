@@ -1,5 +1,6 @@
 import CoreModels
 import CoreNetworking
+import CoreSecureStorage
 import FeatureAuth
 import FeatureTopicsList
 import FeatureTopicDetail
@@ -8,9 +9,18 @@ import FeatureTopicDetail
 /// Everything below only ever sees protocols.
 @MainActor
 enum CompositionRoot {
+    /// A `static let` so the in-memory access token survives the app's lifetime instead of
+    /// being recreated (and lost) on every `makeAuthViewModel()` call.
+    private static let authSessionStore: AuthSessionStoring = AuthSessionStore()
+
     static func makeAuthViewModel() -> AuthViewModel {
         let repository: AuthRepositoryProtocol = AuthRepository()
-        return AuthViewModel(loginUseCase: LoginUseCase(repository: repository))
+        return AuthViewModel(
+            loginUseCase: LoginUseCase(repository: repository),
+            onLoginSuccess: { tokens in
+                Task { try? await CompositionRoot.authSessionStore.save(tokens) }
+            }
+        )
     }
 
     static func makeTopicsListViewModel() -> TopicsListViewModel {

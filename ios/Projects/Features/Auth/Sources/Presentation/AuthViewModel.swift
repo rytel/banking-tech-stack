@@ -11,9 +11,14 @@ public final class AuthViewModel {
     public private(set) var isAuthenticated = false
 
     private let loginUseCase: LoginUseCaseProtocol
+    private let onLoginSuccess: @Sendable (TokenPair) -> Void
 
-    public init(loginUseCase: LoginUseCaseProtocol) {
+    public init(
+        loginUseCase: LoginUseCaseProtocol,
+        onLoginSuccess: @escaping @Sendable (TokenPair) -> Void = { _ in }
+    ) {
         self.loginUseCase = loginUseCase
+        self.onLoginSuccess = onLoginSuccess
     }
 
     public func login() async {
@@ -22,7 +27,8 @@ public final class AuthViewModel {
         defer { isLoading = false }
 
         do {
-            _ = try await loginUseCase.execute(username: username, password: password)
+            let tokens = try await loginUseCase.execute(username: username, password: password)
+            onLoginSuccess(tokens)
             isAuthenticated = true
         } catch {
             errorMessage = message(for: error)
