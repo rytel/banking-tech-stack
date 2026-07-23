@@ -18,18 +18,29 @@ struct Request<Response: Decodable & Sendable>: Sendable {
     var queryItems: [URLQueryItem] = []
 }
 
-enum NetworkError: LocalizedError, Sendable {
+/// Transport-level errors, internal to this module. Repositories map them
+/// to public domain errors (`TopicsError`, `AuthError`) before they leave.
+enum NetworkError: Error, Equatable, Sendable {
     case invalidRequest
     case invalidResponse
+    case offline
+    case cancelled
     case decodingError(String)
     case serverError(Int, String)
+    case transportError(String)
+}
 
-    var errorDescription: String? {
-        switch self {
-        case .invalidRequest: "Could not build a valid request URL"
-        case .invalidResponse: "Invalid response from server"
-        case .decodingError(let message): "Decoding error: \(message)"
-        case .serverError(let code, let message): "Server error (\(code)): \(message)"
+extension NetworkError {
+    /// Normalizes raw `URLSession` failures into our own cases, so nothing
+    /// above the transport layer ever sees a `URLError`.
+    init(_ urlError: URLError) {
+        switch urlError.code {
+        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+            self = .offline
+        case .cancelled:
+            self = .cancelled
+        default:
+            self = .transportError(urlError.localizedDescription)
         }
     }
 }

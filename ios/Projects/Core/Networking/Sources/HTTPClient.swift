@@ -24,8 +24,18 @@ final class HTTPClient: Sendable {
         self.urlSession = urlSession
     }
 
-    func execute<Response>(_ request: Request<Response>) async throws -> Response {
-        let (data, response) = try await urlSession.data(for: urlRequest(for: request))
+    func execute<Response>(_ request: Request<Response>) async throws(NetworkError) -> Response {
+        let urlRequest = try urlRequest(for: request)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: urlRequest)
+        } catch let urlError as URLError {
+            throw NetworkError(urlError)
+        } catch {
+            throw NetworkError.transportError(error.localizedDescription)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
@@ -41,7 +51,7 @@ final class HTTPClient: Sendable {
         }
     }
 
-    func urlRequest<Response>(for request: Request<Response>) throws -> URLRequest {
+    func urlRequest<Response>(for request: Request<Response>) throws(NetworkError) -> URLRequest {
         var components = URLComponents(
             url: environment.baseURL.appendingPathComponent(request.path),
             resolvingAgainstBaseURL: false
@@ -56,7 +66,11 @@ final class HTTPClient: Sendable {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method.rawValue
         if let body = request.body {
-            urlRequest.httpBody = try Self.encoder.encode(body)
+            do {
+                urlRequest.httpBody = try Self.encoder.encode(body)
+            } catch {
+                throw NetworkError.invalidRequest
+            }
             urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
         return urlRequest

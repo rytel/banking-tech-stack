@@ -4,12 +4,15 @@
 // ground both sides already stand on, so the contract lives here. App wires the concrete
 // Core/Networking implementation into each Feature's use case.
 
+// Typed throws (SE-0413): the compiler guarantees that implementations can
+// only fail with the domain error, so no transport error can leak to features.
+
 public protocol AuthRepositoryProtocol: Sendable {
-    func login(username: String, password: String) async throws -> TokenPair
-    func refresh(refreshToken: String) async throws -> TokenPair
+    func login(username: String, password: String) async throws(AuthError) -> TokenPair
+    func refresh(refreshToken: String) async throws(AuthError) -> TokenPair
 }
 
 public protocol TopicsRepositoryProtocol: Sendable {
-    func fetchTopics() async throws -> [Topic]
-    func fetchTopic(id: String) async throws -> Topic
+    func fetchTopics() async throws(TopicsError) -> [Topic]
+    func fetchTopic(id: String) async throws(TopicsError) -> Topic
 }
