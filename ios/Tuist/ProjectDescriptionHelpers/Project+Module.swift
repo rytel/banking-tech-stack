@@ -23,7 +23,8 @@ public extension Project {
         name: String,
         bundleIdSuffix: String,
         product: Product = .framework,
-        dependencies: [TargetDependency] = []
+        dependencies: [TargetDependency] = [],
+        needsTestHost: Bool = false
     ) -> Project {
         let bundleId = "\(bundleIdRoot).\(bundleIdSuffix)"
 
@@ -37,6 +38,27 @@ public extension Project {
             dependencies: dependencies
         )
 
+        // Tests that touch the Keychain must run inside a host app: a hostless XCTest bundle
+        // on the iOS Simulator has no keychain access group, so SecItemAdd fails with -34018
+        // (errSecMissingEntitlement). The host app is a minimal, empty app; XCTest injects the
+        // test bundle into it and the tests inherit the host's default keychain access group.
+        let hostTarget: Target? = needsTestHost ? .target(
+            name: "\(name)TestHost",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "\(bundleId).testhost",
+            deploymentTargets: deploymentTargets,
+            infoPlist: .default,
+            buildableFolders: ["TestHost"]
+        ) : nil
+
+        var testDependencies: [TargetDependency] = [.target(name: name)]
+        var testSettings: SettingsDictionary = [:]
+        if let hostTarget {
+            testDependencies.append(.target(name: hostTarget.name))
+            testSettings["TEST_HOST"] = .string("$(BUILT_PRODUCTS_DIR)/\(hostTarget.name).app/\(hostTarget.name)")
+        }
+
         let testTarget = Target.target(
             name: "\(name)Tests",
             destinations: .iOS,
@@ -44,7 +66,8 @@ public extension Project {
             bundleId: "\(bundleId).tests",
             deploymentTargets: deploymentTargets,
             buildableFolders: ["Tests"],
-            dependencies: [.target(name: name)]
+            dependencies: testDependencies,
+            settings: .settings(base: testSettings)
         )
 
         return Project(
@@ -53,7 +76,7 @@ public extension Project {
                 "DEVELOPMENT_TEAM": .string(developmentTeam),
                 "SWIFT_VERSION": .string("6.0"),
             ]),
-            targets: [mainTarget, testTarget],
+            targets: [mainTarget, testTarget, hostTarget].compactMap { $0 },
             additionalFiles: ["Project.swift"]
         )
     }
