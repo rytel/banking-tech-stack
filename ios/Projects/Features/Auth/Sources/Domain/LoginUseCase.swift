@@ -1,7 +1,7 @@
 import CoreModels
 
-public protocol LoginUseCaseProtocol {
-    // Day 4: func execute(username: String, password: String) async throws
+public protocol LoginUseCaseProtocol: Sendable {
+    func execute(username: String, password: String) async throws(AuthError) -> TokenPair
 }
 
 public final class LoginUseCase: LoginUseCaseProtocol {
@@ -9,5 +9,9 @@ public final class LoginUseCase: LoginUseCaseProtocol {
 
     public init(repository: AuthRepositoryProtocol) {
         self.repository = repository
+    }
+
+    public func execute(username: String, password: String) async throws(AuthError) -> TokenPair {
+        try await repository.login(username: username, password: password)
     }
 }
