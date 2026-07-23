@@ -12,4 +12,11 @@ public enum APIEnvironment: Sendable {
         case .production: URL(string: "https://api.example.com")!
         }
     }
+
+    var webSocketBaseURL: URL {
+        switch self {
+        case .local: URL(string: "wss://localhost:8443")!
+        case .production: URL(string: "wss://api.example.com")!
+        }
+    }
 }

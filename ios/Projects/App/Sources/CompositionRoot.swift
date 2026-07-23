@@ -18,6 +18,11 @@ enum CompositionRoot {
         return TopicsListViewModel(fetchTopicsUseCase: FetchTopicsUseCase(repository: repository))
     }
 
+    static func makeTickerViewModel() -> TickerViewModel {
+        let repository: TickerRepositoryProtocol = TickerRepository()
+        return TickerViewModel(repository: repository)
+    }
+
     static func makeTopicDetailViewModel() -> TopicDetailViewModel {
         let repository: TopicsRepositoryProtocol = TopicsRepository()
         return TopicDetailViewModel(fetchTopicDetailUseCase: FetchTopicDetailUseCase(repository: repository))

@@ -1,6 +1,7 @@
 import Testing
 @testable import App
 
+@MainActor
 struct CompositionRootTests {
     @Test func compositionRootBuildsAuthViewModel() {
         _ = CompositionRoot.makeAuthViewModel()
@@ -14,6 +15,11 @@ struct CompositionRootTests {
 
     @Test func compositionRootBuildsTopicDetailViewModel() {
         _ = CompositionRoot.makeTopicDetailViewModel()
+        #expect(Bool(true))
+    }
+
+    @Test func compositionRootBuildsTickerViewModel() {
+        _ = CompositionRoot.makeTickerViewModel()
         #expect(Bool(true))
     }
 }
