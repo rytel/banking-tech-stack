@@ -102,9 +102,24 @@ it. `MockURLProtocol` (`Core/Networking/Tests/Support/`) is the shared way to st
 responses in repository tests. Swift Testing structs that build `@MainActor`-isolated view
 models must themselves be marked `@MainActor`, or the build fails.
 
+`Core/SecureStorage`'s tests exercise the real Keychain on the Simulator, so its module opts
+into `needsTestHost: true` in `Project.module` (`Tuist/ProjectDescriptionHelpers/Project+Module.swift`).
+This adds a minimal `*TestHost` app target that XCTest injects the test bundle into. Without a
+host app, a Simulator test bundle has no keychain access group and `SecItemAdd` fails with
+`errSecMissingEntitlement`. Set `needsTestHost: true` for any other module whose tests need
+real Keychain access.
+
+### Secure storage
+
+`Core/SecureStorage` now has a real Keychain-backed implementation (`Sources/`):
+`KeychainSecureStorage` wraps the Security framework, `AccessTokenStore` keeps the access token
+in memory, `RefreshTokenStorage` persists the refresh token in the Keychain, and
+`AuthSessionStore` composes both behind one save/read/clear API. `SecretStore` is a
+biometry-gated store (Face ID/Touch ID via `biometryCurrentSet`) for the `GET /secret` value —
+it's complete and tested but not yet wired into a view model. `AuthSessionStore` is wired into
+the login flow via `CompositionRoot`.
+
 ### Known gaps (don't assume these are done)
 
-- Tokens are not yet persisted to the Keychain — `Core/SecureStorage` is still a stub protocol
-  (`SecureStorage.swift`) with no real implementation.
 - No certificate pinning yet.
 - No jailbreak/debugger checks yet.

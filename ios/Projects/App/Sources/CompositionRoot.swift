@@ -18,7 +18,7 @@ enum CompositionRoot {
         return AuthViewModel(
             loginUseCase: LoginUseCase(repository: repository),
             onLoginSuccess: { tokens in
-                Task { try? await CompositionRoot.authSessionStore.save(tokens) }
+                try? await CompositionRoot.authSessionStore.save(tokens)
             }
         )
     }
