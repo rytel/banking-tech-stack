@@ -1,4 +1,4 @@
-public struct Topic: Equatable {
+public struct Topic: Equatable, Decodable, Sendable {
     public let id: String
     public let title: String
     public let description: String

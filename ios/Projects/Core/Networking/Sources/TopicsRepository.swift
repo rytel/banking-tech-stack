@@ -1,6 +1,18 @@
+import Foundation
 import CoreModels
 
-// Day 3 fills this in with a real URLSession-backed implementation.
 public final class TopicsRepository: TopicsRepositoryProtocol {
-    public init() {}
+    private let httpClient: HTTPClient
+
+    public init(environment: APIEnvironment = .local) {
+        self.httpClient = HTTPClient(environment: environment)
+    }
+
+    public func fetchTopics() async throws -> [Topic] {
+        try await httpClient.execute(TopicsAPI.topics)
+    }
+
+    public func fetchTopic(id: String) async throws -> Topic {
+        try await httpClient.execute(TopicsAPI.topic(id: id))
+    }
 }

@@ -4,11 +4,12 @@
 // ground both sides already stand on, so the contract lives here. App wires the concrete
 // Core/Networking implementation into each Feature's use case.
 
-public protocol AuthRepositoryProtocol {
-    // Day 3: func login(username: String, password: String) async throws -> TokenPair
+public protocol AuthRepositoryProtocol: Sendable {
+    func login(username: String, password: String) async throws -> TokenPair
+    func refresh(refreshToken: String) async throws -> TokenPair
 }
 
-public protocol TopicsRepositoryProtocol {
-    // Day 3: func fetchTopics() async throws -> [Topic]
-    // Day 3: func fetchTopic(id: String) async throws -> Topic
+public protocol TopicsRepositoryProtocol: Sendable {
+    func fetchTopics() async throws -> [Topic]
+    func fetchTopic(id: String) async throws -> Topic
 }
