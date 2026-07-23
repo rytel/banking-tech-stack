@@ -39,3 +39,8 @@ type RefreshRequest struct {
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
+
+// TickerMessage is one message pushed over the /ws/ticker WebSocket stream.
+type TickerMessage struct {
+	ServerTime string `json:"server_time"`
+}

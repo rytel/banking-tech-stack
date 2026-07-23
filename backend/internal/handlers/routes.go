@@ -23,6 +23,8 @@ func NewRouter(authSvc *auth.Service, topicsSvc *topics.Service) http.Handler {
 	mux.HandleFunc("GET /topics", listTopicsHandler(topicsSvc))
 	mux.HandleFunc("GET /topics/{id}", getTopicHandler(topicsSvc))
 
+	mux.HandleFunc("GET /ws/ticker", tickerHandler())
+
 	mux.Handle("GET /secret", authSvc.Middleware(secretHandler()))
 
 	return mux
