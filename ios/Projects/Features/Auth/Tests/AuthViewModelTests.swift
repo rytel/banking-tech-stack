@@ -4,6 +4,7 @@ import CoreModels
 
 private struct StubLoginUseCase: LoginUseCaseProtocol {}
 
+@MainActor
 struct AuthViewModelTests {
     @Test func viewModelCanBeBuiltWithAStubUseCase() {
         _ = AuthViewModel(loginUseCase: StubLoginUseCase())

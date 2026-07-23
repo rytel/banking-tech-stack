@@ -4,6 +4,7 @@ import CoreModels
 
 private struct StubFetchTopicsUseCase: FetchTopicsUseCaseProtocol {}
 
+@MainActor
 struct TopicsListViewModelTests {
     @Test func viewModelCanBeBuiltWithAStubUseCase() {
         _ = TopicsListViewModel(fetchTopicsUseCase: StubFetchTopicsUseCase())

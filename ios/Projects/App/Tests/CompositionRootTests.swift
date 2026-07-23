@@ -1,6 +1,7 @@
 import Testing
 @testable import App
 
+@MainActor
 struct CompositionRootTests {
     @Test func compositionRootBuildsAuthViewModel() {
         _ = CompositionRoot.makeAuthViewModel()
