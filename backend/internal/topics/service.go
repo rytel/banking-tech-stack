@@ -3,6 +3,7 @@ package topics
 
 import (
 	"errors"
+	"strings"
 
 	"banking-tech-stack/backend/internal/models"
 )
@@ -20,9 +21,21 @@ func NewService() *Service {
 	return &Service{topics: seed}
 }
 
-// List returns all topics.
-func (s *Service) List() []models.Topic {
-	return s.topics
+// List returns all topics. When query is not empty, only topics whose
+// title contains query (case-insensitive) are returned.
+func (s *Service) List(query string) []models.Topic {
+	if query == "" {
+		return s.topics
+	}
+
+	query = strings.ToLower(query)
+	matches := make([]models.Topic, 0)
+	for _, t := range s.topics {
+		if strings.Contains(strings.ToLower(t.Title), query) {
+			matches = append(matches, t)
+		}
+	}
+	return matches
 }
 
 // Get returns a single topic by id.

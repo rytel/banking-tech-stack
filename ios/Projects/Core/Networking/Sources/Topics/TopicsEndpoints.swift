@@ -16,8 +16,9 @@ enum TopicsPath {
 
 /// Factories for the topics API calls.
 enum TopicsAPI {
-    static var topics: Request<[Topic]> {
-        Request(path: TopicsPath.topics.value, method: .get)
+    static func topics(query: String? = nil) -> Request<[Topic]> {
+        let queryItems = query.map { [URLQueryItem(name: "q", value: $0)] } ?? []
+        return Request(path: TopicsPath.topics.value, method: .get, queryItems: queryItems)
     }
 
     static func topic(id: String) -> Request<Topic> {

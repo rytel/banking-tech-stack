@@ -9,7 +9,8 @@ import (
 
 func listTopicsHandler(topicsSvc *topics.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, topicsSvc.List())
+		query := r.URL.Query().Get("q")
+		writeJSON(w, http.StatusOK, topicsSvc.List(query))
 	}
 }
 

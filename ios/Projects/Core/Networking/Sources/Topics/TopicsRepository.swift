@@ -8,9 +8,9 @@ public final class TopicsRepository: TopicsRepositoryProtocol {
         self.httpClient = HTTPClient(environment: environment, urlSession: urlSession)
     }
 
-    public func fetchTopics() async throws(TopicsError) -> [Topic] {
+    public func fetchTopics(query: String? = nil) async throws(TopicsError) -> [Topic] {
         do {
-            return try await httpClient.execute(TopicsAPI.topics)
+            return try await httpClient.execute(TopicsAPI.topics(query: query))
         } catch {
             // Typed throws on `execute` makes `error` a `NetworkError` here.
             throw TopicsError(error)

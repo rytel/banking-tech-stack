@@ -31,6 +31,7 @@ Package.resolved
 xcuserdata/
 DerivedData/
 .swiftpm/
+ios/build/
 
 # --- macOS ---
 .DS_Store

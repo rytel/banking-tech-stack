@@ -8,6 +8,12 @@
 // only fail with the domain error, so no transport error can leak to features.
 
 public protocol TopicsRepositoryProtocol: Sendable {
-    func fetchTopics() async throws(TopicsError) -> [Topic]
+    func fetchTopics(query: String?) async throws(TopicsError) -> [Topic]
     func fetchTopic(id: String) async throws(TopicsError) -> Topic
+}
+
+extension TopicsRepositoryProtocol {
+    public func fetchTopics() async throws(TopicsError) -> [Topic] {
+        try await fetchTopics(query: nil)
+    }
 }

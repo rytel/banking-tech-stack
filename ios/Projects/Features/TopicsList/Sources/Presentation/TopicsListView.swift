@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct TopicsListView: View {
-    var viewModel: TopicsListViewModel
+    @Bindable var viewModel: TopicsListViewModel
     var tickerViewModel: TickerViewModel
 
     public init(viewModel: TopicsListViewModel, tickerViewModel: TickerViewModel) {
@@ -16,9 +16,43 @@ public struct TopicsListView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
             Text("Topics")
+
+            TextField("Search topics", text: $viewModel.query)
+                .textFieldStyle(.roundedBorder)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal)
+                .onChange(of: viewModel.query) {
+                    viewModel.search()
+                }
+
+            if viewModel.isLoading {
+                ProgressView()
+            }
+
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+
+            List(viewModel.topics, id: \.id) { topic in
+                VStack(alignment: .leading) {
+                    Text(topic.title)
+                        .font(.headline)
+                    Text(topic.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listStyle(.plain)
         }
-        .task { tickerViewModel.start() }
+        .task {
+            tickerViewModel.start()
+            viewModel.search()
+        }
         .onDisappear { tickerViewModel.stop() }
     }
 }
