@@ -1,7 +1,8 @@
-import Combine
+import Observation
 
 @MainActor
-public final class AuthViewModel: ObservableObject {
+@Observable
+public final class AuthViewModel {
     private let loginUseCase: LoginUseCaseProtocol
 
     public init(loginUseCase: LoginUseCaseProtocol) {

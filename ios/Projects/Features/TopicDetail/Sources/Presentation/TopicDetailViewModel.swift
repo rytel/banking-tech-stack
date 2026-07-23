@@ -1,7 +1,8 @@
-import Combine
+import Observation
 
 @MainActor
-public final class TopicDetailViewModel: ObservableObject {
+@Observable
+public final class TopicDetailViewModel {
     private let fetchTopicDetailUseCase: FetchTopicDetailUseCaseProtocol
 
     public init(fetchTopicDetailUseCase: FetchTopicDetailUseCaseProtocol) {

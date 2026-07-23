@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct AuthView: View {
-    @ObservedObject var viewModel: AuthViewModel
+    var viewModel: AuthViewModel
 
     public init(viewModel: AuthViewModel) {
         self.viewModel = viewModel

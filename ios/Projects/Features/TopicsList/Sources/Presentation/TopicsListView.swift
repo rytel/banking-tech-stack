@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct TopicsListView: View {
-    @ObservedObject var viewModel: TopicsListViewModel
+    var viewModel: TopicsListViewModel
 
     public init(viewModel: TopicsListViewModel) {
         self.viewModel = viewModel
