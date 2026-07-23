@@ -5,6 +5,7 @@ import CoreModels
 public protocol AuthSessionStoring: Sendable {
     func save(_ tokens: TokenPair) async throws(KeychainError)
     func accessToken() async -> String?
+    func refreshToken() async throws(KeychainError) -> String?
     func clearSession() async throws(KeychainError)
 }
 
@@ -27,6 +28,10 @@ public final class AuthSessionStore: AuthSessionStoring {
 
     public func accessToken() async -> String? {
         await accessTokenStore.currentToken()
+    }
+
+    public func refreshToken() async throws(KeychainError) -> String? {
+        try refreshTokenStorage.read()
     }
 
     public func clearSession() async throws(KeychainError) {

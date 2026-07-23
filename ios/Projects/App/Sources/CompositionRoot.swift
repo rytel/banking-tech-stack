@@ -13,6 +13,14 @@ enum CompositionRoot {
     /// being recreated (and lost) on every `makeAuthViewModel()` call.
     private static let authSessionStore: AuthSessionStoring = AuthSessionStore()
 
+    /// Serializes token refresh so N concurrent 401s trigger a single refresh (single-flight).
+    /// Wired and ready, but not yet consumed: the request path (`Authorization`-header injection
+    /// and a 401 -> refresh -> retry interceptor in the HTTP client) is a deliberate follow-up.
+    static let tokenRefreshCoordinator: TokenRefreshing = TokenRefreshCoordinator(
+        authRepository: AuthRepository(),
+        sessionStore: authSessionStore
+    )
+
     static func makeAuthViewModel() -> AuthViewModel {
         let repository: AuthRepositoryProtocol = AuthRepository()
         return AuthViewModel(
