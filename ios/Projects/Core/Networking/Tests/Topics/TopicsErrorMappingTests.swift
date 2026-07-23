@@ -4,15 +4,12 @@ import CoreModels
 
 /// Verifies the full path stub -> HTTPClient -> repository: transport failures
 /// must come out as typed domain errors, never as URLError or NetworkError.
-final class ErrorMappingTests: XCTestCase {
+final class TopicsErrorMappingTests: XCTestCase {
     private var topics: TopicsRepository!
-    private var auth: AuthRepository!
 
     override func setUp() {
         super.setUp()
-        let session = MockURLProtocol.session()
-        topics = TopicsRepository(urlSession: session)
-        auth = AuthRepository(urlSession: session)
+        topics = TopicsRepository(urlSession: MockURLProtocol.session())
     }
 
     override func tearDown() {
@@ -63,30 +60,6 @@ final class ErrorMappingTests: XCTestCase {
         stubFailure(.cancelled)
 
         await assertFetchTopicsFails(with: .cancelled)
-    }
-
-    // MARK: - The same 401 has a different domain meaning per auth operation
-
-    func test_login401_mapsToInvalidCredentials() async {
-        stub(status: 401)
-
-        do {
-            _ = try await auth.login(username: "user", password: "wrong")
-            XCTFail("Expected AuthError")
-        } catch {
-            XCTAssertEqual(error, .invalidCredentials)
-        }
-    }
-
-    func test_refresh401_mapsToSessionExpired() async {
-        stub(status: 401)
-
-        do {
-            _ = try await auth.refresh(refreshToken: "expired")
-            XCTFail("Expected AuthError")
-        } catch {
-            XCTAssertEqual(error, .sessionExpired)
-        }
     }
 
     // MARK: - Helpers

@@ -1,4 +1,4 @@
-// These protocols live in Core/Models, not in a Feature's own domain layer, because both
+// This protocol lives in Core/Models, not in a Feature's own domain layer, because both
 // a Feature (as consumer) and Core/Networking (as implementer) depend on Core/Models — and
 // the module rule is Features -> Core only, never Core -> Feature. Core/Models is the shared
 // ground both sides already stand on, so the contract lives here. App wires the concrete
@@ -10,9 +10,4 @@
 public protocol AuthRepositoryProtocol: Sendable {
     func login(username: String, password: String) async throws(AuthError) -> TokenPair
     func refresh(refreshToken: String) async throws(AuthError) -> TokenPair
-}
-
-public protocol TopicsRepositoryProtocol: Sendable {
-    func fetchTopics() async throws(TopicsError) -> [Topic]
-    func fetchTopic(id: String) async throws(TopicsError) -> Topic
 }
