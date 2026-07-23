@@ -1,5 +1,6 @@
 import Combine
 
+@MainActor
 public final class TopicsListViewModel: ObservableObject {
     private let fetchTopicsUseCase: FetchTopicsUseCaseProtocol
 

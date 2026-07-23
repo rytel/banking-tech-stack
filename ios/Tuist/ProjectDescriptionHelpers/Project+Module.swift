@@ -49,7 +49,10 @@ public extension Project {
 
         return Project(
             name: name,
-            settings: .settings(base: ["DEVELOPMENT_TEAM": .string(developmentTeam)]),
+            settings: .settings(base: [
+                "DEVELOPMENT_TEAM": .string(developmentTeam),
+                "SWIFT_VERSION": .string("6.0"),
+            ]),
             targets: [mainTarget, testTarget],
             additionalFiles: ["Project.swift"]
         )

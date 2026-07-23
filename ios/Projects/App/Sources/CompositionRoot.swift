@@ -6,6 +6,7 @@ import FeatureTopicDetail
 
 /// The one place in the app allowed to know about concrete Core implementations.
 /// Everything below only ever sees protocols.
+@MainActor
 enum CompositionRoot {
     static func makeAuthViewModel() -> AuthViewModel {
         let repository: AuthRepositoryProtocol = AuthRepository()
