@@ -50,7 +50,8 @@ public extension Project {
         return Project(
             name: name,
             settings: .settings(base: ["DEVELOPMENT_TEAM": .string(developmentTeam)]),
-            targets: [mainTarget, testTarget]
+            targets: [mainTarget, testTarget],
+            additionalFiles: ["Project.swift"]
         )
     }
 }
