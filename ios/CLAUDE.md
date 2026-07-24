@@ -120,6 +120,11 @@ it's complete and tested but not yet wired into a view model. `AuthSessionStore`
 the login flow via `CompositionRoot`. `TokenRefreshCoordinator` is an actor that serializes token
 refresh single-flight style — concurrent callers hitting an expired access token join the one
 in-flight refresh instead of each triggering their own; it is also wired into `CompositionRoot`.
+`SecureEnclaveSigner` signs data with a P-256 key generated in the Secure Enclave (CryptoKit
+`SecureEnclave.P256.Signing.PrivateKey`) — the key never leaves the enclave, and signing requires
+Face ID/Touch ID via a `.privateKeyUsage` + `.biometryCurrentSet` access control set at key
+generation. Complete and tested to the extent possible without driving biometric UI from XCTest;
+like `SecretStore`, deliberately not wired into a view model.
 
 ### Known gaps (don't assume these are done)
 
