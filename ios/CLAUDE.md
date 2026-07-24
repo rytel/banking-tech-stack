@@ -117,7 +117,9 @@ in memory, `RefreshTokenStorage` persists the refresh token in the Keychain, and
 `AuthSessionStore` composes both behind one save/read/clear API. `SecretStore` is a
 biometry-gated store (Face ID/Touch ID via `biometryCurrentSet`) for the `GET /secret` value —
 it's complete and tested but not yet wired into a view model. `AuthSessionStore` is wired into
-the login flow via `CompositionRoot`.
+the login flow via `CompositionRoot`. `TokenRefreshCoordinator` is an actor that serializes token
+refresh single-flight style — concurrent callers hitting an expired access token join the one
+in-flight refresh instead of each triggering their own; it is also wired into `CompositionRoot`.
 
 ### Known gaps (don't assume these are done)
 
