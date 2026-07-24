@@ -49,7 +49,7 @@ The backend must be running first — login, the topics list, and the live ticke
 
 ### Current status
 
-Core flows (login, topics, live ticker) work end to end. Token storage is in place: the refresh token is persisted in the Keychain (`ThisDeviceOnly`, so it never leaves the device via backups), the access token is kept in memory only, and a biometry-gated store (Face ID / Touch ID) is ready for the `GET /secret` value. Token refresh is serialized through a single-flight `TokenRefreshCoordinator`, so concurrent 401s trigger exactly one refresh call. Some security hardening is still in progress: certificate pinning and basic jailbreak/debugger checks are not finished yet.
+Core flows (login, topics, live ticker) work end to end. Token storage is in place: the refresh token is persisted in the Keychain (`ThisDeviceOnly`, so it never leaves the device via backups), the access token is kept in memory only, and a biometry-gated store (Face ID / Touch ID) is ready for the `GET /secret` value. Token refresh is serialized through a single-flight `TokenRefreshCoordinator`, so concurrent 401s trigger exactly one refresh call. TLS certificate pinning is in place: one shared `URLSession` pins the server's SPKI (public key) hash for both HTTPS and the WebSocket ticker, failing closed on any mismatch. Some security hardening is still in progress: basic jailbreak/debugger checks are not finished yet.
 
 ## Backend
 

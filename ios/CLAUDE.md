@@ -126,7 +126,21 @@ Face ID/Touch ID via a `.privateKeyUsage` + `.biometryCurrentSet` access control
 generation. Complete and tested to the extent possible without driving biometric UI from XCTest;
 like `SecretStore`, deliberately not wired into a view model.
 
+### Certificate pinning
+
+All traffic (HTTPS and the WSS ticker) goes through one SPKI-pinned `URLSession` built in
+`CompositionRoot` via `URLSession.pinned(for:)`. The pinning code lives in
+`Core/Networking/Sources/Pinning/`: `PinningURLSessionDelegate` answers the server-trust
+challenge (system trust evaluation first, then an SPKI-hash match against any certificate in
+the chain, fail closed), `SPKIHash` computes openssl-compatible pins, and
+`PinningConfiguration` holds the per-environment pin sets next to `APIEnvironment`. A pin
+failure surfaces as `NetworkError.pinningFailure` (the delegate records the failed host
+because URLSession reports the cancelled handshake as a generic "cancelled"). To update a pin:
+`ios/scripts/spki-pin.sh --cert|--host|--key` prints it, and `backend/scripts/gen-cert.sh`
+prints the new `.local` pin on every regeneration — paste it into `PinningConfiguration.swift`.
+The self-signed-localhost path (`allowsSelfSigned`) exists only in DEBUG builds. See NOTES.md
+for the SPKI-vs-leaf-cert reasoning and the pin rotation procedure.
+
 ### Known gaps (don't assume these are done)
 
-- No certificate pinning yet.
 - No jailbreak/debugger checks yet.

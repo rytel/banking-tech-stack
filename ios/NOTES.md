@@ -52,6 +52,76 @@ Module dependency graph, generated with `tuist graph --format png --output-path 
   planned XCTest-vs-Swift-Testing comparison has two real, pre-existing examples instead of one
   built for the occasion.
 
+## Certificate pinning: SPKI over leaf cert, and how to rotate
+
+### What we pin
+
+The pin is `base64(SHA-256(DER SubjectPublicKeyInfo))` — a hash of the server's *public key
+structure*, not of the certificate. It is the same value that openssl produces:
+
+```bash
+openssl x509 -in server.crt -pubkey -noout \
+  | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
+```
+
+`ios/scripts/spki-pin.sh` wraps this (`--cert`, `--host`, `--key` modes), and
+`backend/scripts/gen-cert.sh` prints the pin every time it regenerates the local certificate.
+Pins live per environment in `Core/Networking/Sources/Pinning/PinningConfiguration.swift`,
+next to the base URLs. The delegate (`PinningURLSessionDelegate`) handles the server-trust
+challenge for one shared `URLSession` built in `CompositionRoot` — the same session carries
+HTTPS and the WSS ticker, so all traffic is pinned in one place.
+
+### Why SPKI, not the leaf certificate
+
+- **Certificates are rotating metadata; the key is the identity.** A leaf certificate is
+  reissued regularly (Let's Encrypt every 90 days, and the CA/Browser Forum is pushing maximum
+  validity down toward ~47 days). Pinning the certificate would force an app release for every
+  renewal. The private/public key pair can stay the same across renewals — an SPKI pin
+  survives them.
+- **Same security, less brittleness.** What the pin actually protects is "the server proved it
+  holds this private key". The certificate around that key adds nothing to the pin's security,
+  only more reasons to break.
+- **Chain-wide matching adds operational freedom.** The delegate accepts a match against *any*
+  certificate in the validated chain, so ops can pin an intermediate CA key instead of the
+  leaf and decouple app releases from server certificate changes completely.
+- **It is the industry standard.** HPKP (RFC 7469), TrustKit, and OkHttp all pin SPKI hashes.
+
+Two implementation details worth defending in an interview:
+
+- **The ASN.1 header dance.** `SecKeyCopyExternalRepresentation` returns the raw key *without*
+  the SubjectPublicKeyInfo header, so `SPKIHash` prepends the fixed DER header for the key
+  type before hashing — otherwise the hash would never match an openssl-computed pin. Only
+  EC P-256 and RSA-2048 headers are supported; an unknown key type hashes to `nil` and can
+  never match a pin (fail closed). The allowlist doubles as a key policy.
+- **Pinning narrows trust, never widens it.** `SecTrustEvaluateWithError` (chain, hostname,
+  expiry) runs first; the pin check happens only after the system says yes. A pin can never
+  make an otherwise invalid certificate acceptable. (For `.local`, DEBUG builds anchor the
+  self-signed certificate to itself so hostname/expiry checks still run; that code path is
+  compiled out of Release. Apple's TLS policy also demands the `serverAuth` extended key
+  usage and ≤398-day validity, which is why `gen-cert.sh` sets those.)
+
+### How to rotate pins
+
+- **Always ship at least two pins.** The live server key, plus a *backup* key generated
+  offline and kept cold. `spki-pin.sh --key` computes a pin straight from a key file, so the
+  backup certificate does not need to exist yet.
+- **Planned rotation (overlap, zero downtime):**
+  1. Generate the new key pair; compute its pin (`spki-pin.sh --key new.key`).
+  2. Ship an app release whose pin set is {current, new, backup}.
+  3. When that release's adoption is high enough, switch the server to the new key.
+  4. In the next release, drop the old pin and promote a fresh backup.
+  The server only changes keys between app releases that both trust it.
+- **Emergency rotation (key compromised or lost):** switch the server to the backup key
+  immediately — every shipped build already trusts it — then run the planned flow to
+  establish a new backup.
+- **Failure mode is loud but safe.** A pin mismatch cancels the TLS handshake before any
+  request byte is sent; the app surfaces `NetworkError.pinningFailure` (the delegate records
+  the failed host, because URLSession reports the cancel as a generic "cancelled" error).
+  There is deliberately no remote kill switch — a bad rotation bricks networking for affected
+  builds until an app update, which is exactly why the backup pin is mandatory.
+- **Local dev:** rerunning `backend/scripts/gen-cert.sh` prints the new pin; paste it into
+  the `.local` entry in `PinningConfiguration.swift`.
+
 ## Commands used
 
 ```bash
