@@ -19,7 +19,7 @@ extension AuthError {
             self = .serverUnavailable
         case .decodingError, .invalidResponse:
             self = .invalidData
-        case .serverError, .invalidRequest, .transportError:
+        case .serverError, .invalidRequest, .transportError, .pinningFailure:
             self = .unknown
         }
     }

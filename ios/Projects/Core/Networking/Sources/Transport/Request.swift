@@ -25,6 +25,7 @@ enum NetworkError: Error, Equatable, Sendable {
     case invalidResponse
     case offline
     case cancelled
+    case pinningFailure
     case decodingError(String)
     case serverError(Int, String)
     case transportError(String)
@@ -39,6 +40,12 @@ extension NetworkError {
             self = .offline
         case .cancelled:
             self = .cancelled
+        case .serverCertificateUntrusted, .secureConnectionFailed, .serverCertificateHasBadDate,
+             .serverCertificateNotYetValid, .serverCertificateHasUnknownRoot:
+            // TLS-level failures. Note: a cancel from the pinning delegate is
+            // reported as `.cancelled`, not as one of these codes — that case
+            // is detected in `HTTPClient` by asking the delegate directly.
+            self = .pinningFailure
         default:
             self = .transportError(urlError.localizedDescription)
         }

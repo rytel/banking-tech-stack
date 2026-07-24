@@ -32,6 +32,15 @@ final class HTTPClient: Sendable {
         do {
             (data, response) = try await urlSession.data(for: urlRequest)
         } catch let urlError as URLError {
+            // A rejected pin cancels the TLS handshake, and URLSession reports
+            // that as a plain `.cancelled`. Ask the pinning delegate whether
+            // this host just failed pinning, so the failure is not silent.
+            if urlError.code == .cancelled,
+                let delegate = urlSession.delegate as? PinningURLSessionDelegate,
+                let host = urlRequest.url?.host,
+                delegate.consumePinningFailure(forHost: host) {
+                throw NetworkError.pinningFailure
+            }
             throw NetworkError(urlError)
         } catch {
             throw NetworkError.transportError(error.localizedDescription)
