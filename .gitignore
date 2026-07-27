@@ -36,6 +36,11 @@ ios/build/
 # --- macOS ---
 .DS_Store
 
+# --- Claude Code ---
+# settings.json and commands/ are shared and committed on purpose.
+.claude/settings.local.json
+.claude/worktrees/
+
 # --- Private notes ---
 /TODO_projekt_treningowy.md
 /ios/NOTES.md
