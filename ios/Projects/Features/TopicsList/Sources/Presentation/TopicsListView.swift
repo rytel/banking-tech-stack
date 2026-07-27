@@ -3,10 +3,16 @@ import SwiftUI
 public struct TopicsListView: View {
     @Bindable var viewModel: TopicsListViewModel
     var tickerViewModel: TickerViewModel
+    var onSelectTopic: (String) -> Void
 
-    public init(viewModel: TopicsListViewModel, tickerViewModel: TickerViewModel) {
+    public init(
+        viewModel: TopicsListViewModel,
+        tickerViewModel: TickerViewModel,
+        onSelectTopic: @escaping (String) -> Void
+    ) {
         self.viewModel = viewModel
         self.tickerViewModel = tickerViewModel
+        self.onSelectTopic = onSelectTopic
     }
 
     public var body: some View {
@@ -39,13 +45,18 @@ public struct TopicsListView: View {
             }
 
             List(viewModel.topics, id: \.id) { topic in
-                VStack(alignment: .leading) {
-                    Text(topic.title)
-                        .font(.headline)
-                    Text(topic.description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                Button {
+                    onSelectTopic(topic.id)
+                } label: {
+                    VStack(alignment: .leading) {
+                        Text(topic.title)
+                            .font(.headline)
+                        Text(topic.description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
             }
             .listStyle(.plain)
         }

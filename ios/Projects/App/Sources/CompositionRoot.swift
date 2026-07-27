@@ -57,6 +57,9 @@ enum CompositionRoot {
             loginUseCase: LoginUseCase(repository: repository),
             onLoginSuccess: { tokens in
                 try? await CompositionRoot.authSessionStore.save(tokens)
+            },
+            onLogout: {
+                try? await CompositionRoot.authSessionStore.clearSession()
             }
         )
     }
@@ -74,5 +77,19 @@ enum CompositionRoot {
     static func makeTopicDetailViewModel() -> TopicDetailViewModel {
         let repository: TopicsRepositoryProtocol = TopicsRepository(environment: environment, urlSession: pinnedSession)
         return TopicDetailViewModel(fetchTopicDetailUseCase: FetchTopicDetailUseCase(repository: repository))
+    }
+
+    static func makeSecretViewModel() -> SecretViewModel {
+        let repository: SecretRepositoryProtocol = SecretRepository(
+            environment: environment,
+            urlSession: pinnedSession,
+            accessTokenProvider: { await CompositionRoot.authSessionStore.accessToken() }
+        )
+        let secretStore: SecretStoring = KeychainSecretStore()
+        return SecretViewModel(
+            fetchSecretUseCase: FetchSecretUseCase(repository: repository),
+            store: { secret in try? secretStore.save(secret) },
+            unlock: { try? await secretStore.readSecret(reason: "Unlock your saved secret") }
+        )
     }
 }

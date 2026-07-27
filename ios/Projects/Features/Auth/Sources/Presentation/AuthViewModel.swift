@@ -12,13 +12,16 @@ public final class AuthViewModel {
 
     private let loginUseCase: LoginUseCaseProtocol
     private let onLoginSuccess: @Sendable (TokenPair) async -> Void
+    private let onLogout: @Sendable () async -> Void
 
     public init(
         loginUseCase: LoginUseCaseProtocol,
-        onLoginSuccess: @escaping @Sendable (TokenPair) async -> Void = { _ in }
+        onLoginSuccess: @escaping @Sendable (TokenPair) async -> Void = { _ in },
+        onLogout: @escaping @Sendable () async -> Void = {}
     ) {
         self.loginUseCase = loginUseCase
         self.onLoginSuccess = onLoginSuccess
+        self.onLogout = onLogout
     }
 
     public func login() async {
@@ -33,6 +36,14 @@ public final class AuthViewModel {
         } catch {
             errorMessage = message(for: error)
         }
+    }
+
+    public func logout() async {
+        await onLogout()
+        username = ""
+        password = ""
+        errorMessage = nil
+        isAuthenticated = false
     }
 
     private func message(for error: AuthError) -> String? {

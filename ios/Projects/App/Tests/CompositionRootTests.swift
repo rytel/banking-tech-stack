@@ -22,4 +22,9 @@ struct CompositionRootTests {
         _ = CompositionRoot.makeTickerViewModel()
         #expect(Bool(true))
     }
+
+    @Test func compositionRootBuildsSecretViewModel() {
+        _ = CompositionRoot.makeSecretViewModel()
+        #expect(Bool(true))
+    }
 }

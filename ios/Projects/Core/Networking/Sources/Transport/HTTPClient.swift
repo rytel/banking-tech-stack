@@ -6,6 +6,7 @@ import Foundation
 final class HTTPClient: Sendable {
     private let environment: APIEnvironment
     private let urlSession: URLSession
+    private let accessTokenProvider: @Sendable () async -> String?
 
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -19,13 +20,21 @@ final class HTTPClient: Sendable {
         return encoder
     }()
 
-    init(environment: APIEnvironment, urlSession: URLSession = .shared) {
+    init(
+        environment: APIEnvironment,
+        urlSession: URLSession = .shared,
+        accessTokenProvider: @escaping @Sendable () async -> String? = { nil }
+    ) {
         self.environment = environment
         self.urlSession = urlSession
+        self.accessTokenProvider = accessTokenProvider
     }
 
     func execute<Response>(_ request: Request<Response>) async throws(NetworkError) -> Response {
-        let urlRequest = try urlRequest(for: request)
+        var urlRequest = try urlRequest(for: request)
+        if request.requiresAuth, let token = await accessTokenProvider() {
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         let data: Data
         let response: URLResponse

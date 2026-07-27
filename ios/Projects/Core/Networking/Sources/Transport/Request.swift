@@ -16,6 +16,9 @@ struct Request<Response: Decodable & Sendable>: Sendable {
     let method: HTTPMethod
     var body: (any Encodable & Sendable)? = nil
     var queryItems: [URLQueryItem] = []
+    /// If true, `HTTPClient` attaches an `Authorization: Bearer` header using its
+    /// `accessTokenProvider` before sending the request.
+    var requiresAuth: Bool = false
 }
 
 /// Transport-level errors, internal to this module. Repositories map them
