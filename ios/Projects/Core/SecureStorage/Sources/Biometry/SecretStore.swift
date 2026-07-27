@@ -7,8 +7,8 @@ public protocol SecretStoring: Sendable {
 }
 
 /// Stores the `GET /secret` value behind biometric access control: a read triggers Face ID /
-/// Touch ID. The capability is complete and tested, but deliberately not wired into any view
-/// model — it's a ready-to-use store, not a screen.
+/// Touch ID. Wired into `SecretViewModel` via `CompositionRoot.makeSecretViewModel()` and
+/// presented from `TopicsCoordinatorView`'s toolbar lock button.
 public final class KeychainSecretStore: SecretStoring {
     private let storage: SecureStorageProtocol
     private let item: KeychainItemDescriptor

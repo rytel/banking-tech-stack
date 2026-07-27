@@ -52,7 +52,7 @@ The workspace is generated, not committed, so `tuist generate` comes first on a 
 
 ### Current status
 
-Core flows (login, topics, live ticker) work end to end. Token storage is in place: the refresh token is persisted in the Keychain (`ThisDeviceOnly`, so it never leaves the device via backups), the access token is kept in memory only, and a biometry-gated store (Face ID / Touch ID) is ready for the `GET /secret` value. Token refresh is serialized through a single-flight `TokenRefreshCoordinator`, so concurrent 401s trigger exactly one refresh call. TLS certificate pinning is in place: one shared `URLSession` pins the server's SPKI (public key) hash for both HTTPS and the WebSocket ticker, failing closed on any mismatch. Basic RASP checks are in place too: a `sysctl`-based debugger check and a file-heuristic jailbreak check run once at launch and log a warning if either fires — both are defense-in-depth signals, not hard barriers, and never block the app.
+Core flows (login, topics, live ticker) work end to end. Token storage is in place: the refresh token is persisted in the Keychain (`ThisDeviceOnly`, so it never leaves the device via backups), the access token is kept in memory only, and a biometry-gated store (Face ID / Touch ID) protects the `GET /secret` value, wired into its own screen behind a toolbar lock button. A single-flight `TokenRefreshCoordinator` serializes token refresh so concurrent 401s trigger exactly one refresh call, and the HTTP client automatically retries a 401'd request once with the refreshed token. TLS certificate pinning is in place: one shared `URLSession` pins the server's SPKI (public key) hash for both HTTPS and the WebSocket ticker, failing closed on any mismatch. Basic RASP checks are in place too: a `sysctl`-based debugger check and a file-heuristic jailbreak check run once at launch and log a warning if either fires — both are defense-in-depth signals, not hard barriers, and never block the app.
 ## Backend
 
 A small Go service whose only job is to give the iOS app something real to call — not a project in its own right.
@@ -111,8 +111,8 @@ Tool versions are pinned one place each — Tuist and Ruby in `mise.toml`, Go in
 
 ```
 .
-├── ios/        # iOS app (Tuist workspace, MVVM + Clean Architecture)
-├── backend/    # Go server backing the app
-├── fastlane/   # Build and test lanes, shared by developers and CI
-└── certs/      # TLS certificate and key used by the backend (generated, not committed)
+├── ios/            # iOS app (Tuist workspace, MVVM + Clean Architecture)
+├── backend/        # Go server backing the app
+│   └── certs/      # TLS certificate and key used by the backend (generated, not committed)
+└── fastlane/       # Build and test lanes, shared by developers and CI
 ```

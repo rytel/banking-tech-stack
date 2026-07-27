@@ -7,12 +7,14 @@ public final class SecretRepository: SecretRepositoryProtocol {
     public init(
         environment: APIEnvironment = .local,
         urlSession: URLSession = .shared,
-        accessTokenProvider: @escaping @Sendable () async -> String? = { nil }
+        accessTokenProvider: @escaping @Sendable () async -> String? = { nil },
+        tokenRefresher: @escaping @Sendable () async -> Bool = { false }
     ) {
         self.httpClient = HTTPClient(
             environment: environment,
             urlSession: urlSession,
-            accessTokenProvider: accessTokenProvider
+            accessTokenProvider: accessTokenProvider,
+            tokenRefresher: tokenRefresher
         )
     }
 

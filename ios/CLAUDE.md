@@ -126,12 +126,18 @@ real Keychain access.
 `Core/SecureStorage` now has a real Keychain-backed implementation (`Sources/`):
 `KeychainSecureStorage` wraps the Security framework, `AccessTokenStore` keeps the access token
 in memory, `RefreshTokenStorage` persists the refresh token in the Keychain, and
-`AuthSessionStore` composes both behind one save/read/clear API. `SecretStore` is a
+`AuthSessionStore` composes both behind one save/read/clear API. `KeychainSecretStore` is a
 biometry-gated store (Face ID/Touch ID via `biometryCurrentSet`) for the `GET /secret` value —
-it's complete and tested but not yet wired into a view model. `AuthSessionStore` is wired into
+it's wired into `SecretViewModel` via `CompositionRoot.makeSecretViewModel()` and presented from
+`TopicsCoordinatorView`'s toolbar lock button. `AuthSessionStore` is wired into
 the login flow via `CompositionRoot`. `TokenRefreshCoordinator` is an actor that serializes token
 refresh single-flight style — concurrent callers hitting an expired access token join the one
-in-flight refresh instead of each triggering their own; it is also wired into `CompositionRoot`.
+in-flight refresh instead of each triggering their own. `HTTPClient` consumes it through a
+`tokenRefresher` closure: a 401 on a `requiresAuth` request triggers one refresh and a single
+retry with the new access token (`Projects/Core/Networking/Sources/Transport/HTTPClient.swift`);
+`CompositionRoot.makeSecretViewModel()` is the only current wiring site, since `/secret` is the
+only `requiresAuth` endpoint. A 401 on the retry itself is surfaced as-is, so a broken refresh
+token can't loop forever.
 `SecureEnclaveSigner` signs data with a P-256 key generated in the Secure Enclave (CryptoKit
 `SecureEnclave.P256.Signing.PrivateKey`) — the key never leaves the enclave, and signing requires
 Face ID/Touch ID via a `.privateKeyUsage` + `.biometryCurrentSet` access control set at key
@@ -166,3 +172,8 @@ checks are hand-rolled instead of a third-party RASP SDK, and their explicit lim
 
 - RASP checks are basic and log-only; there is no server-side attestation (e.g. App Attest) and
   no client-side enforcement (blocking login/flows) tied to their result.
+- `SecretRepository` is still the only repository that injects an `Authorization` header and the
+  only consumer of the `HTTPClient` 401 → refresh → retry interceptor — `AuthRepository` and
+  `TopicsRepository` call endpoints that don't `requiresAuth`, so they send none. That's expected
+  given today's endpoint list, not a gap, but it means the retry path has only ever run against
+  `/secret` in practice.

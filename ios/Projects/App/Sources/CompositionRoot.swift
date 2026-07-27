@@ -44,8 +44,8 @@ enum CompositionRoot {
     private static let authSessionStore: AuthSessionStoring = AuthSessionStore()
 
     /// Serializes token refresh so N concurrent 401s trigger a single refresh (single-flight).
-    /// Wired and ready, but not yet consumed: the request path (`Authorization`-header injection
-    /// and a 401 -> refresh -> retry interceptor in the HTTP client) is a deliberate follow-up.
+    /// Consumed by `HTTPClient`'s 401 -> refresh -> retry interceptor, wired below for the
+    /// `requiresAuth` endpoints that use it (currently just `/secret`).
     static let tokenRefreshCoordinator: TokenRefreshing = TokenRefreshCoordinator(
         authRepository: AuthRepository(environment: environment, urlSession: pinnedSession),
         sessionStore: authSessionStore
@@ -83,7 +83,15 @@ enum CompositionRoot {
         let repository: SecretRepositoryProtocol = SecretRepository(
             environment: environment,
             urlSession: pinnedSession,
-            accessTokenProvider: { await CompositionRoot.authSessionStore.accessToken() }
+            accessTokenProvider: { await CompositionRoot.authSessionStore.accessToken() },
+            tokenRefresher: {
+                do {
+                    _ = try await CompositionRoot.tokenRefreshCoordinator.refresh()
+                    return true
+                } catch {
+                    return false
+                }
+            }
         )
         let secretStore: SecretStoring = KeychainSecretStore()
         return SecretViewModel(

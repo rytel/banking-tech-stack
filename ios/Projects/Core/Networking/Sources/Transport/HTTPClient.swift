@@ -7,6 +7,7 @@ final class HTTPClient: Sendable {
     private let environment: APIEnvironment
     private let urlSession: URLSession
     private let accessTokenProvider: @Sendable () async -> String?
+    private let tokenRefresher: @Sendable () async -> Bool
 
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -20,17 +21,33 @@ final class HTTPClient: Sendable {
         return encoder
     }()
 
+    /// - Parameters:
+    ///   - accessTokenProvider: Supplies the current access token for `requiresAuth` requests.
+    ///   - tokenRefresher: Called on a 401 to a `requiresAuth` request, before giving up. Returns
+    ///     `true` if a refresh succeeded (in which case the request is retried once, re-reading
+    ///     `accessTokenProvider` for the new token) or `false` to surface the 401 as-is.
     init(
         environment: APIEnvironment,
         urlSession: URLSession = .shared,
-        accessTokenProvider: @escaping @Sendable () async -> String? = { nil }
+        accessTokenProvider: @escaping @Sendable () async -> String? = { nil },
+        tokenRefresher: @escaping @Sendable () async -> Bool = { false }
     ) {
         self.environment = environment
         self.urlSession = urlSession
         self.accessTokenProvider = accessTokenProvider
+        self.tokenRefresher = tokenRefresher
     }
 
     func execute<Response>(_ request: Request<Response>) async throws(NetworkError) -> Response {
+        try await execute(request, isRetryAfterRefresh: false)
+    }
+
+    /// `isRetryAfterRefresh` caps this at a single retry: a 401 on the retry itself is surfaced
+    /// as-is rather than triggering a second refresh, so a broken refresh token can't loop forever.
+    private func execute<Response>(
+        _ request: Request<Response>,
+        isRetryAfterRefresh: Bool
+    ) async throws(NetworkError) -> Response {
         var urlRequest = try urlRequest(for: request)
         if request.requiresAuth, let token = await accessTokenProvider() {
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -58,6 +75,12 @@ final class HTTPClient: Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
         }
+
+        if httpResponse.statusCode == 401, request.requiresAuth, !isRetryAfterRefresh,
+            await tokenRefresher() {
+            return try await execute(request, isRetryAfterRefresh: true)
+        }
+
         guard (200..<300).contains(httpResponse.statusCode) else {
             throw NetworkError.serverError(httpResponse.statusCode, errorMessage(from: data))
         }
