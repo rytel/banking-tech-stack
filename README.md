@@ -24,6 +24,7 @@ The dependency rule is strict: **Features depend on Core, never on each other.**
 | `Core/Networking` | HTTP client and repository implementations |
 | `Core/SecureStorage` | Token and secret storage |
 | `Core/DesignSystem` | Shared UI building blocks |
+| `Core/RASP` | Basic debugger/jailbreak detection |
 
 ![module graph](ios/graph.png)
 
@@ -32,7 +33,7 @@ The dependency rule is strict: **Features depend on Core, never on each other.**
 - Login screen wired to a real backend (`AuthView` / `AuthViewModel` / `LoginUseCase`)
 - Topic list with search
 - Live ticker built on a Combine publisher wrapped around a WebSocket connection (`URLSessionWebSocketTask`)
-- Swift 6 strict concurrency in `Core` (`Sendable`, `@MainActor`)
+- Swift 6 concurrency features in `Core` (`Sendable`, `@MainActor`, `Observation` framework)
 - Two testing styles side by side: XCTest in `Core`, Swift Testing (`@Test`, `#expect`) in `Features` and `App`
 - `MockURLProtocol` used to stub network calls in tests
 
@@ -64,10 +65,10 @@ A small Go service whose only job is to give the iOS app something real to call 
 |---|---|
 | `GET /health` | Health check |
 | `POST /auth/login` | Returns an access token and a refresh token |
-| `POST /auth/refresh` | Returns a new access token |
-| `GET /topics` | List of topics |
+| `POST /auth/refresh` | Returns a new access token and a new refresh token |
+| `GET /topics` | List of topics (supports optional `?q=` query to filter by title) |
 | `GET /topics/{id}` | Topic details |
-| `GET /ws/ticker` | WebSocket feed used by the iOS live ticker |
+| `GET /ws/ticker` | WebSocket feed used by the iOS live ticker, one message per second |
 | `GET /secret` | Example protected endpoint, requires a valid JWT |
 
 ### Running the backend
