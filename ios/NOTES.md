@@ -122,11 +122,53 @@ Two implementation details worth defending in an interview:
 - **Local dev:** rerunning `backend/scripts/gen-cert.sh` prints the new pin; paste it into
   the `.local` entry in `PinningConfiguration.swift`.
 
+## Basic RASP checks: debugger and jailbreak detection, and their limits
+
+### What we check
+
+`Core/RASP` (`CoreRASP`) exposes two independent signals through `RASPCheck.currentStatus()`:
+
+- **Debugger attached** (`DebuggerCheck`): the classic `sysctl(KERN_PROC, KERN_PROC_PID, pid)`
+  call from Apple Technical Q&A QA1361, checking the `P_TRACED` bit in `kinfo_proc.kp_proc.p_flag`.
+- **Likely jailbroken** (`JailbreakCheck`): looks for files that jailbreak tooling leaves behind
+  (`/Applications/Cydia.app`, `/Library/MobileSubstrate/MobileSubstrate.dylib`, and similar), and
+  tries to write a file under `/private` — something a correctly sandboxed app can never do.
+
+`CompositionRoot` runs both once at launch (`BankingTechStackApp.init` calls
+`checkRASPStatusAtLaunch()`) and only logs a warning if either fires. Nothing blocks on the
+result — no login gate, no forced logout, no UI change.
+
+### Why sysctl / file-heuristics, not a third-party RASP SDK
+
+- **No third-party SPM dependencies in this workspace** (see the module table in `CLAUDE.md`) —
+  the same constraint that led to hand-rolling certificate pinning applies here.
+- **These are meant to be simple, auditable trip-wires**, not a bypass-proof anti-tampering
+  product. A real RASP SDK adds obfuscation and anti-hooking around its own checks; a from-scratch
+  `sysctl` call and a handful of `fileExists` checks make no such claim, and the code says so.
+
+### Limitations (read this before trusting a `true`/`false`)
+
+- **Both checks are bypassable on a jailbroken device.** A jailbreak tweak can hook
+  `JailbreakCheck`'s file checks to always report "clean," or patch the `sysctl` result. Neither
+  check defends against an attacker who controls the runtime — they only catch an
+  unsophisticated one.
+- **Detect-only, not prevent.** There is no API to stop a debugger from attaching or a jailbreak
+  from existing; these checks only observe state at the moment they run.
+- **Defense-in-depth, never the sole gate.** Do not wire either flag into an authorization
+  decision (e.g. "block login if jailbroken") without accepting that a jailbroken device can
+  simply forge a `false`. Treat a positive result as one signal to log/monitor, alongside
+  certificate pinning and normal server-side validation — never as a trusted client-side fact.
+- **`isLikelyJailbroken` reports `true` on the iOS Simulator — this is expected.** The Simulator
+  runs as a normal process on the macOS host, so paths like `/bin/bash` and `/usr/sbin/sshd`
+  (absent on a stock, non-jailbroken iOS device, which is exactly why they're on the suspicious
+  list) trivially exist there, and `/private` is writable too. Don't read a Simulator run as a
+  false alarm or as evidence the check is broken; verify jailbreak behavior on a real device.
+
 ## Commands used
 
 ```bash
 tuist generate --no-open   # regenerate the workspace after any manifest change
 tuist build                # build every module + the app in dependency order
-tuist test                 # run all 8 test targets
+tuist test                 # run all 9 test targets
 tuist graph --format png --output-path .   # this file's diagram
 ```

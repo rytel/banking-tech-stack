@@ -1,16 +1,38 @@
 import CoreModels
 import Foundation
 import CoreNetworking
+import CoreRASP
 import CoreSecureStorage
 import FeatureAuth
 import FeatureTopicsList
 import FeatureTopicDetail
+import os
 
 /// The one place in the app allowed to know about concrete Core implementations.
 /// Everything below only ever sees protocols.
 @MainActor
 enum CompositionRoot {
     private static let environment: APIEnvironment = .local
+
+    /// Logs the RASP status at launch. This is a signal to watch, not a
+    /// security gate: both checks are bypassable on a compromised device
+    /// (see `CoreRASP.DebuggerCheck` / `JailbreakCheck`), so the app never
+    /// blocks login or any flow on the result — it only gets logged.
+    private static let raspStatus: RASPStatus = {
+        let status = RASPCheck.currentStatus()
+        if status.isDebuggerAttached || status.isLikelyJailbroken {
+            Logger(subsystem: "dev.rflrytel.bankingtechstack", category: "RASP")
+                .warning("RASP signal detected: debuggerAttached=\(status.isDebuggerAttached), likelyJailbroken=\(status.isLikelyJailbroken)")
+        }
+        return status
+    }()
+
+    /// Forces the lazily-initialized `raspStatus` to run. Call once at app
+    /// launch (`BankingTechStackApp.init`) — a `static let` only evaluates on
+    /// first access, so without this call the check would never run.
+    static func checkRASPStatusAtLaunch() {
+        _ = raspStatus
+    }
 
     /// One SPKI-pinned session shared by every repository, so all HTTP and
     /// WebSocket traffic goes through the same pinning delegate (and reuses

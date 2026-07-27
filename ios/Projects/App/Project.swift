@@ -12,5 +12,6 @@ let project = Project.module(
         .core("Networking"),
         .core("SecureStorage"),
         .core("DesignSystem"),
+        .core("RASP"),
     ]
 )

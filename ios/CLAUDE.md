@@ -48,6 +48,7 @@ Feature as a dependency.
 | `Core/Networking` | HTTP client and repository implementations |
 | `Core/SecureStorage` | Token and secret storage |
 | `Core/DesignSystem` | Shared UI building blocks |
+| `Core/RASP` | Basic debugger/jailbreak detection |
 
 ### Repository protocols live in `Core/Models`, not per-feature `Domain/`
 
@@ -141,6 +142,16 @@ prints the new `.local` pin on every regeneration — paste it into `PinningConf
 The self-signed-localhost path (`allowsSelfSigned`) exists only in DEBUG builds. See NOTES.md
 for the SPKI-vs-leaf-cert reasoning and the pin rotation procedure.
 
+### Basic RASP checks
+
+`Core/RASP` has two bypassable-by-design signals: `DebuggerCheck.isDebuggerAttached()` (the
+`sysctl(KERN_PROC)` / `P_TRACED` trick) and `JailbreakCheck.isLikelyJailbroken()` (jailbreak-tool
+file paths plus a sandbox-escape write test). `RASPCheck.currentStatus()` combines both, and
+`CompositionRoot.checkRASPStatusAtLaunch()` runs it once at launch (`BankingTechStackApp.init`),
+logging a warning if either fires — nothing blocks on the result. See NOTES.md for why these
+checks are hand-rolled instead of a third-party RASP SDK, and their explicit limitations.
+
 ### Known gaps (don't assume these are done)
 
-- No jailbreak/debugger checks yet.
+- RASP checks are basic and log-only; there is no server-side attestation (e.g. App Attest) and
+  no client-side enforcement (blocking login/flows) tied to their result.
