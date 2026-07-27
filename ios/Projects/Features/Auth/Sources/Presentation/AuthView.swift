@@ -17,14 +17,17 @@ public struct AuthView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("usernameField")
 
             SecureField("Password", text: $viewModel.password)
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("passwordField")
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.red)
+                    .accessibilityIdentifier("loginErrorMessage")
             }
 
             Button {
@@ -40,6 +43,7 @@ public struct AuthView: View {
             .buttonStyle(.borderedProminent)
             .tint(AppColors.accent)
             .disabled(viewModel.isLoading || viewModel.username.isEmpty || viewModel.password.isEmpty)
+            .accessibilityIdentifier("loginButton")
         }
         .padding()
     }

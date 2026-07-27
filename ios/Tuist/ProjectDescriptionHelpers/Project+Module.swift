@@ -24,7 +24,8 @@ public extension Project {
         bundleIdSuffix: String,
         product: Product = .framework,
         dependencies: [TargetDependency] = [],
-        needsTestHost: Bool = false
+        needsTestHost: Bool = false,
+        hasUITests: Bool = false
     ) -> Project {
         let bundleId = "\(bundleIdRoot).\(bundleIdSuffix)"
 
@@ -70,13 +71,26 @@ public extension Project {
             settings: .settings(base: testSettings)
         )
 
+        // A UI test bundle has no `TEST_HOST`: it drives the app as a separate process, launched
+        // fresh for every test via `XCUIApplication().launch()`, and Tuist wires `TEST_TARGET_NAME`
+        // from this dependency on the app target so Xcode knows which app to launch.
+        let uiTestTarget: Target? = hasUITests ? .target(
+            name: "\(name)UITests",
+            destinations: .iOS,
+            product: .uiTests,
+            bundleId: "\(bundleId).uitests",
+            deploymentTargets: deploymentTargets,
+            buildableFolders: ["UITests"],
+            dependencies: [.target(name: name)]
+        ) : nil
+
         return Project(
             name: name,
             settings: .settings(base: [
                 "DEVELOPMENT_TEAM": .string(developmentTeam),
                 "SWIFT_VERSION": .string("6.0"),
             ]),
-            targets: [mainTarget, testTarget, hostTarget].compactMap { $0 },
+            targets: [mainTarget, testTarget, hostTarget, uiTestTarget].compactMap { $0 },
             additionalFiles: ["Project.swift"]
         )
     }

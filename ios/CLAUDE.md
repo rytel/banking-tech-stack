@@ -103,6 +103,15 @@ it. `MockURLProtocol` (`Core/Networking/Tests/Support/`) is the shared way to st
 responses in repository tests. Swift Testing structs that build `@MainActor`-isolated view
 models must themselves be marked `@MainActor`, or the build fails.
 
+`App/UITests` (`AppUITests` target, `hasUITests: true` in `Project.module`) is the one exception
+to the XCTest/Swift Testing split above: it uses `XCTestCase` + `XCUIApplication` regardless of
+which module it lives under, since UI test bundles are a different animal (`waitForExistence`,
+`app.launch()`) from either unit-test style. Unlike every other test target, it drives the real
+app process and therefore hits the actual backend over the network — it needs the backend running
+locally first (see Commands above) and isn't part of the fast, mock-only unit test loop. The
+screens it drives expose stable `accessibilityIdentifier`s (`usernameField`, `passwordField`,
+`loginButton`, `loginErrorMessage`, `topicsTitle`) instead of relying on matching visible text.
+
 `Core/SecureStorage`'s tests exercise the real Keychain on the Simulator, so its module opts
 into `needsTestHost: true` in `Project.module` (`Tuist/ProjectDescriptionHelpers/Project+Module.swift`).
 This adds a minimal `*TestHost` app target that XCTest injects the test bundle into. Without a

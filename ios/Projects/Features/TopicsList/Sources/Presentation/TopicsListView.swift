@@ -24,6 +24,7 @@ public struct TopicsListView: View {
             }
 
             Text("Topics")
+                .accessibilityIdentifier("topicsTitle")
 
             TextField("Search topics", text: $viewModel.query)
                 .textFieldStyle(.roundedBorder)

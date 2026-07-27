@@ -13,5 +13,6 @@ let project = Project.module(
         .core("SecureStorage"),
         .core("DesignSystem"),
         .core("RASP"),
-    ]
+    ],
+    hasUITests: true
 )
