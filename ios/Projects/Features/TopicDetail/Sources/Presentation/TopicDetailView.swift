@@ -50,3 +50,36 @@ public struct TopicDetailView: View {
         .task { await viewModel.load(id: topicId) }
     }
 }
+
+#if DEBUG
+import CoreModels
+
+private struct PreviewFetchTopicDetailUseCase: FetchTopicDetailUseCaseProtocol {
+    var result: Result<TopicDetailResult, TopicsError> = .success(
+        TopicDetailResult(
+            topic: Topic(
+                id: "1",
+                title: "JWT signing: ES256 vs HS256",
+                description: "Why a client cannot verify an HS256 token without exposing the shared secret."
+            ),
+            relatedTopics: [
+                Topic(id: "2", title: "Refresh token single-flight", description: "Serializing concurrent token refreshes with an actor.")
+            ]
+        )
+    )
+
+    func execute(id: String) async throws(TopicsError) -> TopicDetailResult {
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+}
+
+#Preview {
+    TopicDetailView(
+        viewModel: TopicDetailViewModel(fetchTopicDetailUseCase: PreviewFetchTopicDetailUseCase()),
+        topicId: "1"
+    )
+}
+#endif

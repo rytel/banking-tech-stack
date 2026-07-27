@@ -38,4 +38,31 @@ struct AuthViewModelTests {
         #expect(!viewModel.isAuthenticated)
         #expect(viewModel.errorMessage != nil)
     }
+
+    @Test func logoutClearsAuthenticationAndCallsOnLogout() async {
+        let token = TokenPair(accessToken: "a", refreshToken: "r", expiresIn: 3600)
+        let onLogoutCalls = CallCounter()
+        let viewModel = AuthViewModel(
+            loginUseCase: StubLoginUseCase(result: .success(token)),
+            onLogout: { await onLogoutCalls.increment() }
+        )
+        await viewModel.login()
+        viewModel.username = "demo"
+        viewModel.password = "demo1234"
+
+        await viewModel.logout()
+
+        #expect(!viewModel.isAuthenticated)
+        #expect(viewModel.username.isEmpty)
+        #expect(viewModel.password.isEmpty)
+        #expect(await onLogoutCalls.count == 1)
+    }
+}
+
+private actor CallCounter {
+    private(set) var count = 0
+
+    func increment() {
+        count += 1
+    }
 }

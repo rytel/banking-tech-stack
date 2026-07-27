@@ -67,3 +67,38 @@ public struct TopicsListView: View {
         .onDisappear { tickerViewModel.stop() }
     }
 }
+
+#if DEBUG
+import Combine
+import CoreModels
+
+private struct PreviewFetchTopicsUseCase: FetchTopicsUseCaseProtocol {
+    var result: Result<[Topic], TopicsError> = .success([
+        Topic(id: "1", title: "JWT signing: ES256 vs HS256", description: "Why a client cannot verify an HS256 token without exposing the shared secret."),
+        Topic(id: "2", title: "Refresh token single-flight", description: "Serializing concurrent token refreshes with an actor.")
+    ])
+
+    func execute(query: String?) async throws(TopicsError) -> [Topic] {
+        switch result {
+        case .success(let topics): return topics
+        case .failure(let error): throw error
+        }
+    }
+}
+
+private struct PreviewTickerRepository: TickerRepositoryProtocol {
+    func tickerUpdates() -> AnyPublisher<TickerUpdate, TickerError> {
+        Just(TickerUpdate(serverTime: "2026-07-27T19:00:00Z"))
+            .setFailureType(to: TickerError.self)
+            .eraseToAnyPublisher()
+    }
+}
+
+#Preview {
+    TopicsListView(
+        viewModel: TopicsListViewModel(fetchTopicsUseCase: PreviewFetchTopicsUseCase()),
+        tickerViewModel: TickerViewModel(repository: PreviewTickerRepository()),
+        onSelectTopic: { _ in }
+    )
+}
+#endif

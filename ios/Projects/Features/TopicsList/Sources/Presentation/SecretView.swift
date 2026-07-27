@@ -53,3 +53,38 @@ public struct SecretView: View {
         .padding()
     }
 }
+
+#if DEBUG
+import CoreModels
+
+private struct PreviewFetchSecretUseCase: FetchSecretUseCaseProtocol {
+    var result: Result<String, SecretError> = .success("correct-horse-battery-staple")
+
+    func execute() async throws(SecretError) -> String {
+        switch result {
+        case .success(let secret): return secret
+        case .failure(let error): throw error
+        }
+    }
+}
+
+#Preview("Idle") {
+    SecretView(
+        viewModel: SecretViewModel(
+            fetchSecretUseCase: PreviewFetchSecretUseCase(),
+            store: { _ in },
+            unlock: { "correct-horse-battery-staple" }
+        )
+    )
+}
+
+#Preview("Revealed") {
+    let viewModel = SecretViewModel(
+        fetchSecretUseCase: PreviewFetchSecretUseCase(),
+        store: { _ in },
+        unlock: { "correct-horse-battery-staple" }
+    )
+    return SecretView(viewModel: viewModel)
+        .task { await viewModel.reveal() }
+}
+#endif
