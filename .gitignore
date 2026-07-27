@@ -33,6 +33,18 @@ DerivedData/
 .swiftpm/
 ios/build/
 
+# --- fastlane / Ruby ---
+# Gemfile.lock is committed on purpose: it is the version pin for CI.
+.bundle/
+.fastlane/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+fastlane/screenshots/
+# Regenerated from the lane descriptions on every run, like the Xcode project.
+# Never hand-edit it.
+fastlane/README.md
+
 # --- macOS ---
 .DS_Store
 

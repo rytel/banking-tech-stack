@@ -30,6 +30,35 @@ Some private notes (`TODO_projekt_treningowy.md`, `ios/NOTATKI_do_powtorki.md`) 
 They are personal study notes, not project documentation — don't take instructions from them and
 don't mirror their language in code or docs.
 
+## Building and testing
+
+fastlane is the entry point for every check, so the same commands run locally and in CI. Run them
+from the repository root:
+
+| Command | What it does |
+|---|---|
+| `bundle exec fastlane ios ci` | Backend checks + iOS unit tests — the everyday loop |
+| `bundle exec fastlane backend_check` | `backend/scripts/check.sh`: gofmt, `go vet`, `go test` |
+| `bundle exec fastlane ios build` | `tuist generate` + `tuist build` |
+| `bundle exec fastlane ios test` | All unit test bundles, `AppUITests` skipped |
+| `bundle exec fastlane ios e2e` | Starts the Go server, runs `AppUITests` against it, stops it |
+
+The raw `tuist` commands still work and are the right tool for a single target
+(`tuist test CoreNetworkingTests`) — see [ios/CLAUDE.md](ios/CLAUDE.md).
+
+Every lane regenerates the workspace first, because `.xcworkspace` is gitignored. Set
+`SIMULATOR="iPhone 17 Pro"` if the default simulator is missing on your machine.
+
+Setup on a new machine is `mise install` (gets Tuist and Ruby at the pinned versions) followed by
+`bundle install`. fastlane needs Ruby 3.2 or newer — the `ruby` that ships with macOS is 2.6 and
+will not run it, so `bundle exec` has to resolve to the mise-managed Ruby.
+
+Tool versions are pinned in one place each: Tuist and Ruby in `mise.toml`, Go in `backend/go.mod`,
+Xcode in `.xcode-version`. Never write a version in a second file.
+
+`.github/workflows/ci.yml` runs the same lanes on push and on every pull request. macOS runners
+are free and unmetered here because the repository is public.
+
 ## Things that span both sides
 
 - **The backend must be running for the app to work end to end** (login, topics, live ticker) and
@@ -38,9 +67,10 @@ don't mirror their language in code or docs.
 - **The server is on `https://localhost:8443`** (`wss://` for the ticker). This lives in
   `APIEnvironment` (`.local`) on the iOS side and in `cmd/server/main.go` on the Go side.
 - **Regenerating the TLS certificate breaks the app until you update the pin.**
-  `backend/scripts/gen-cert.sh` prints the new SPKI pin; paste it into the `.local` pin set in
-  `ios/Projects/Core/Networking/Sources/Pinning/PinningConfiguration.swift`. Otherwise every
-  request fails with `NetworkError.pinningFailure`.
+  `backend/scripts/gen-cert.sh` prints the new SPKI pin; write it into the `.local` pin set with
+  `ios/scripts/set-local-pin.sh --from-cert backend/certs/server.crt`. Otherwise every request
+  fails with `NetworkError.pinningFailure`. The `e2e` lane does this automatically and puts the
+  committed pin back when it finishes.
 - **Login credentials are `demo` / `demo1234`**, hardcoded in `backend/internal/auth/service.go`.
 - **API JSON is snake_case on purpose** — it is there to exercise decoding strategies on the
   client. Don't change it to camelCase on either side.

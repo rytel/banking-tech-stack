@@ -4,7 +4,11 @@ argument-hint: "[scheme name, e.g. CoreNetworkingTests — omit to test everythi
 allowed-tools: Bash(tuist generate:*), Bash(tuist build:*), Bash(tuist test:*), Read, Edit, Grep, Glob
 ---
 
-Verify the iOS side. Run from the `ios/` directory, in this order, and stop at the first failure:
+Verify the iOS side, one target at a time. For the whole repository use `/check`
+(`bundle exec fastlane ios ci`) instead — this command exists for the narrower case where you want
+a single scheme.
+
+Run from the `ios/` directory, in this order, and stop at the first failure:
 
 1. `tuist generate --no-open` — needed after any change to `Project.swift`, `Workspace.swift`,
    or `Tuist/ProjectDescriptionHelpers/`. Safe to run even if nothing changed.

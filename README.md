@@ -1,5 +1,7 @@
 # Banking Tech Stack
 
+[![CI](https://github.com/rytel/banking-tech-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/rytel/banking-tech-stack/actions/workflows/ci.yml)
+
 A modular iOS banking-style app built with MVVM + Clean Architecture and Tuist, backed by a small Go server that makes the login, topics, and live ticker flows work end to end.
 
 **The iOS app is the main part of this project. The backend is a lightweight support service** — just enough to give the app something real to talk to.
@@ -46,7 +48,7 @@ tuist build
 tuist test
 ```
 
-The backend must be running first — login, the topics list, and the live ticker all need it to work.
+The workspace is generated, not committed, so `tuist generate` comes first on a fresh clone. The backend must be running for the app to work — login, the topics list, and the live ticker all need it.
 
 ### Current status
 
@@ -79,11 +81,38 @@ cd backend
 go run ./cmd/server
 ```
 
+## Continuous integration
+
+Every check runs through fastlane, so CI and a local machine execute the same commands. From the repository root:
+
+```bash
+mise install     # Tuist and Ruby at the pinned versions
+bundle install
+bundle exec fastlane ios ci
+```
+
+fastlane needs Ruby 3.2 or newer, so the `ruby` that ships with macOS (2.6) will not do.
+
+| Lane | What it does |
+|---|---|
+| `fastlane ios ci` | Backend checks + iOS unit tests — the everyday loop |
+| `fastlane backend_check` | gofmt, `go vet`, `go test` |
+| `fastlane ios build` | `tuist generate` + `tuist build` |
+| `fastlane ios test` | All unit test bundles, `AppUITests` skipped |
+| `fastlane ios e2e` | Starts the Go server, runs `AppUITests` against it, stops it |
+
+The `e2e` lane is the interesting one: certificates are not committed, so it generates one if needed, points the app's `.local` SPKI pin at the key the running server actually serves, runs the UI tests, then stops the server and restores the committed pin. That is what makes an end-to-end run reproducible on a machine that has never seen this repository.
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs these lanes on push and on every pull request: the Go checks on Linux, the iOS tests and the end-to-end run on macOS. GitHub's macOS runners are free and unmetered for public repositories.
+
+Tool versions are pinned one place each — Tuist and Ruby in `mise.toml`, Go in `backend/go.mod`, Xcode in `.xcode-version`.
+
 ## Repository layout
 
 ```
 .
 ├── ios/        # iOS app (Tuist workspace, MVVM + Clean Architecture)
 ├── backend/    # Go server backing the app
+├── fastlane/   # Build and test lanes, shared by developers and CI
 └── certs/      # TLS certificate and key used by the backend (generated, not committed)
 ```

@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same branch makes the previous run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Go backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          # backend/go.mod is the only place the Go version is written down.
+          go-version-file: backend/go.mod
+
+      # The same script the `backend_check` fastlane lane runs locally.
+      - name: gofmt, go vet, go test
+        working-directory: backend
+        run: ./scripts/check.sh
+
+  ios-test:
+    name: iOS unit tests
+    # macOS runners are free and unmetered on public repositories.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read the pinned Xcode version
+        run: echo "XCODE_VERSION=$(cat .xcode-version)" >> "$GITHUB_ENV"
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      # Installs Tuist at the version pinned in mise.toml — the runner image
+      # does not ship it. Only tuist: setup-ruby below reads its own version
+      # out of the same mise.toml and would otherwise install Ruby twice.
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: tuist
+
+      # No ruby-version input: the action falls back to mise.toml, which is
+      # where the Ruby version is pinned.
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Run the unit tests
+        run: bundle exec fastlane ios test
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-unit-test-results
+          path: fastlane/test_output
+          retention-days: 7
+
+  e2e:
+    name: End-to-end (app against the Go server)
+    runs-on: macos-26
+    # The slowest job, and pointless once either side has already failed alone.
+    needs: [backend, ios-test]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read the pinned Xcode version
+        run: echo "XCODE_VERSION=$(cat .xcode-version)" >> "$GITHUB_ENV"
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: tuist
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: backend/go.mod
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      # The lane generates the TLS certificate (it is gitignored, so a fresh
+      # clone never has one), points the app's .local pin at the key the server
+      # actually serves, starts the server and stops it again afterwards.
+      - name: Run AppUITests against a live backend
+        run: bundle exec fastlane ios e2e
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-e2e-results
+          path: fastlane/test_output
+          retention-days: 7

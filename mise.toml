@@ -1,0 +1,14 @@
+# Pins the tools that have no other version marker in the repo, so a local
+# machine and a CI runner build with the same versions.
+#
+#   mise install    installs everything below
+#
+# CI reads this file too: `jdx/mise-action` installs Tuist from it, and
+# `ruby/setup-ruby` picks the Ruby version out of it.
+#
+# Go is deliberately absent: `backend/go.mod` already states the version, and
+# CI reads it from there. Xcode lives in `.xcode-version`, which is what the
+# setup-xcode action expects. One source of truth per tool.
+[tools]
+tuist = "4.202.6"
+ruby = "3.3.6"

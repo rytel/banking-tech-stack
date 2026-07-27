@@ -1,18 +1,28 @@
 ---
 description: Start the backend, run the end-to-end iOS UI tests, then stop the backend
-allowed-tools: Bash(ls:*), Bash(./scripts/gen-cert.sh:*), Bash(go run:*), Bash(curl -k https://localhost:8443/:*), Bash(lsof:*), Bash(kill:*), Bash(tuist generate:*), Bash(tuist test:*), Read
+allowed-tools: Bash(bundle exec fastlane:*), Bash(lsof:*), Read
 ---
 
 Run a real end-to-end check: `AppUITests` needs a live backend, unlike the mock-only unit tests.
+The `e2e` lane does the whole sequence, from the repository root:
 
-1. From `backend/`, check whether `certs/server.crt` and `certs/server.key` exist; if not, run
-   `./scripts/gen-cert.sh`. If it prints a new SPKI pin, stop and tell the user to run
-   `/rotate-pin` first — a mismatched pin makes every request fail with
-   `NetworkError.pinningFailure`, and the UI tests would fail for the wrong reason.
-2. Start the server in the background from `backend/`: `go run ./cmd/server`.
-3. Confirm it's up: `curl -k https://localhost:8443/health` (expect HTTP 200).
-4. From `ios/`, run `tuist generate --no-open`, then `tuist test AppUITests`.
-5. Stop the backend process you started in step 2, regardless of whether the tests passed.
-6. Report pass/fail with the actual failure output if any, and confirm the backend was shut down.
+```
+bundle exec fastlane ios e2e
+```
 
-Don't leave a backend process running after this command finishes.
+The lane handles the parts that are easy to get wrong on your own:
+
+- generates `backend/certs/server.{crt,key}` if they are missing (they are never committed);
+- points the `.local` SPKI pin at the key the running server actually serves, so the tests cannot
+  fail with `NetworkError.pinningFailure` for the wrong reason;
+- reuses a backend that is already listening on `https://localhost:8443` instead of starting a
+  second one, and only stops the server it started itself;
+- puts the committed pin back afterwards, so the working tree stays clean whether the tests passed
+  or failed.
+
+Report pass/fail with the actual failure output if any. Then confirm with `lsof -ti :8443` that no
+backend the lane started is still running.
+
+If the lane reports that it generated a new certificate, tell the user: their local setup now has a
+certificate that no longer matches the committed pin, and `/rotate-pin` is the way to make that
+permanent.
