@@ -89,6 +89,11 @@ public extension Project {
             settings: .settings(base: [
                 "DEVELOPMENT_TEAM": .string(developmentTeam),
                 "SWIFT_VERSION": .string("6.0"),
+                // Baking these in avoids Xcode's "Update to recommended settings" prompt,
+                // which would otherwise reappear on every `tuist generate` since the
+                // .xcodeproj is regenerated from scratch each time.
+                "ENABLE_USER_SCRIPT_SANDBOXING": .string("YES"),
+                "STRING_CATALOG_GENERATE_SYMBOLS": .string("YES"),
             ]),
             targets: [mainTarget, testTarget, hostTarget, uiTestTarget].compactMap { $0 },
             additionalFiles: ["Project.swift"]
