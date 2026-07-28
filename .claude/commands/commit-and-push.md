@@ -1,5 +1,5 @@
 ---
-description: Commit staged/unstaged changes with a generated message, then push after confirmation
+description: Commit staged/unstaged changes with a generated message, then push automatically
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git branch:*)
 ---
 
@@ -18,10 +18,7 @@ Commit the current changes and push them.
 4. Create the commit. Never use `--no-verify` or `--amend` unless explicitly asked.
 5. Run `git status` to confirm the commit succeeded, then check whether the branch tracks a
    remote and whether it's ahead.
-6. **Before pushing, show the user the commit(s) that would be pushed and the target
-   branch/remote, and wait for explicit confirmation.** Pushing is a shared-state action — do not
-   push without a clear yes. Never force-push.
-7. If confirmed, push (`git push`, or `git push -u origin <branch>` if the branch has no upstream
-   yet).
+6. Push immediately, without waiting for confirmation (`git push`, or
+   `git push -u origin <branch>` if the branch has no upstream yet). Never force-push.
 
 If there is nothing to commit, say so and stop — don't create an empty commit.
